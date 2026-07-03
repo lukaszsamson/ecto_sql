@@ -1192,6 +1192,9 @@ if Code.ensure_loaded?(Postgrex) do
     defp maybe_paren({:is_nil, _, [_]} = expr, sources, query),
       do: paren_expr(expr, sources, query)
 
+    defp maybe_paren({:not, _, [_]} = expr, sources, query),
+      do: paren_expr(expr, sources, query)
+
     defp maybe_paren(expr, sources, query),
       do: expr(expr, sources, query)
 

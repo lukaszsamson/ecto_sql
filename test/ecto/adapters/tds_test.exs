@@ -674,6 +674,9 @@ defmodule Ecto.Adapters.TdsTest do
 
     query = Schema |> select([r], r.x > 2) |> plan()
     assert all(query) == ~s{SELECT s0.[x] > 2 FROM [schema] AS s0}
+
+    query = Schema |> select([r], (not r.x) < r.y) |> plan()
+    assert all(query) == ~s{SELECT (NOT (s0.[x])) < s0.[y] FROM [schema] AS s0}
   end
 
   test "is_nil" do

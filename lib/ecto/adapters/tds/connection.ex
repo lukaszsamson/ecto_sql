@@ -1009,6 +1009,10 @@ if Code.ensure_loaded?(Tds) do
       paren_expr(expr, sources, query)
     end
 
+    defp op_to_binary({:not, _, [_]} = expr, sources, query) do
+      paren_expr(expr, sources, query)
+    end
+
     defp op_to_binary(expr, sources, query) do
       expr(expr, sources, query)
     end
