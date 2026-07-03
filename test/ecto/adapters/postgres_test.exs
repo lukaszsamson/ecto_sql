@@ -1008,6 +1008,22 @@ defmodule Ecto.Adapters.PostgresTest do
     query = Schema |> where([s], s.meta["id"] == "123") |> select(true) |> plan()
     assert all(query) == ~s|SELECT TRUE FROM "schema" AS s0 WHERE ((s0."meta"@>'{"id": "123"}'))|
 
+    query = Schema |> where([s], s.meta["k"] == "a\\b") |> select(true) |> plan()
+    assert all(query) == ~S|SELECT TRUE FROM "schema" AS s0 WHERE ((s0."meta"@>'{"k": "a\\b"}'))|
+
+    query = Schema |> where([s], s.meta["k"] == "l1\nl2") |> select(true) |> plan()
+
+    assert all(query) ==
+             ~S|SELECT TRUE FROM "schema" AS s0 WHERE ((s0."meta"@>'{"k": "l1\nl2"}'))|
+
+    query = Schema |> where([s], s.meta["k"] == "a\\q") |> select(true) |> plan()
+    assert all(query) == ~S|SELECT TRUE FROM "schema" AS s0 WHERE ((s0."meta"@>'{"k": "a\\q"}'))|
+
+    query = Schema |> where([s], s.meta["a\\b"] == "value") |> select(true) |> plan()
+
+    assert all(query) ==
+             ~S|SELECT TRUE FROM "schema" AS s0 WHERE ((s0."meta"@>'{"a\\b": "value"}'))|
+
     query = Schema |> where([s], s.meta["tags"][0]["name"] == "123") |> select(true) |> plan()
 
     assert all(query) ==

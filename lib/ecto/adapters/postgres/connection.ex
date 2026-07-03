@@ -2020,12 +2020,10 @@ if Code.ensure_loaded?(Postgrex) do
     end
 
     defp escape_json(value) when is_binary(value) do
-      escaped =
-        value
-        |> escape_string()
-        |> :binary.replace("\"", "\\\"", [:global])
-
-      [?", escaped, ?"]
+      value
+      |> json_library().encode_to_iodata!()
+      |> IO.iodata_to_binary()
+      |> escape_string()
     end
 
     defp escape_json(value) when is_integer(value) do
@@ -2034,6 +2032,10 @@ if Code.ensure_loaded?(Postgrex) do
 
     defp escape_json(true), do: ["true"]
     defp escape_json(false), do: ["false"]
+
+    defp json_library do
+      Application.get_env(:postgrex, :json_library, Jason)
+    end
 
     # To allow columns in json paths, we use the array[...] syntax
     # which requires special handling for strings and column references.
