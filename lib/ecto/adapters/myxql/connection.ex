@@ -502,7 +502,7 @@ if Code.ensure_loaded?(MyXQL) do
         end)
 
       wheres =
-        for %JoinExpr{on: %QueryExpr{expr: value} = expr} <- joins,
+        for %JoinExpr{on: %{expr: value} = expr} <- joins,
             value != true,
             do: expr |> Map.put(:__struct__, BooleanExpr) |> Map.put(:op, :and)
 
@@ -513,7 +513,7 @@ if Code.ensure_loaded?(MyXQL) do
 
     defp join(%{joins: joins} = query, sources) do
       Enum.map(joins, fn
-        %JoinExpr{on: %QueryExpr{expr: expr}, qual: qual, ix: ix, source: source, hints: hints} ->
+        %JoinExpr{on: %{expr: expr}, qual: qual, ix: ix, source: source, hints: hints} ->
           {join, name} = get_source(query, sources, ix, source)
 
           [
