@@ -481,7 +481,7 @@ if Code.ensure_loaded?(MyXQL) do
     end
 
     defp update_op(:inc, quoted_key, value, sources, query) do
-      [quoted_key, " = ", quoted_key, " + " | expr(value, sources, query)]
+      [quoted_key, " = ", quoted_key, " + " | op_to_binary(value, sources, query)]
     end
 
     defp update_op(command, _quoted_key, _value, _sources, query) do
@@ -720,7 +720,7 @@ if Code.ensure_loaded?(MyXQL) do
 
     defp expr({:in, _, [left, right]}, sources, query) when is_list(right) do
       args = Enum.map_intersperse(right, ?,, &expr(&1, sources, query))
-      [expr(left, sources, query), " IN (", args, ?)]
+      [op_to_binary(left, sources, query), " IN (", args, ?)]
     end
 
     defp expr({:in, _, [_, {:^, _, [_, 0]}]}, _sources, _query) do
@@ -729,19 +729,19 @@ if Code.ensure_loaded?(MyXQL) do
 
     defp expr({:in, _, [left, {:^, _, [_, length]}]}, sources, query) do
       args = Enum.intersperse(List.duplicate(??, length), ?,)
-      [expr(left, sources, query), " IN (", args, ?)]
+      [op_to_binary(left, sources, query), " IN (", args, ?)]
     end
 
     defp expr({:in, _, [left, %Ecto.SubQuery{} = subquery]}, sources, query) do
-      [expr(left, sources, query), " IN ", expr(subquery, sources, query)]
+      [op_to_binary(left, sources, query), " IN ", expr(subquery, sources, query)]
     end
 
     defp expr({:in, _, [left, right]}, sources, query) do
-      [expr(left, sources, query), " = ANY(", expr(right, sources, query), ?)]
+      [op_to_binary(left, sources, query), " = ANY(", expr(right, sources, query), ?)]
     end
 
     defp expr({:is_nil, _, [arg]}, sources, query) do
-      [expr(arg, sources, query) | " IS NULL"]
+      [op_to_binary(arg, sources, query) | " IS NULL"]
     end
 
     defp expr({:not, _, [expr]}, sources, query) do
@@ -934,7 +934,7 @@ if Code.ensure_loaded?(MyXQL) do
     end
 
     defp interval(count, "millisecond", sources, query) do
-      ["INTERVAL (", expr(count, sources, query) | " * 1000) microsecond"]
+      ["INTERVAL (", op_to_binary(count, sources, query) | " * 1000) microsecond"]
     end
 
     defp interval(count, interval, sources, query) do

@@ -638,6 +638,31 @@ defmodule Ecto.Adapters.MyXQLTest do
 
     query = "schema" |> select([r], r.x == is_nil(r.y)) |> plan()
     assert all(query) == ~s{SELECT s0.`x` = (s0.`y` IS NULL) FROM `schema` AS s0}
+
+    query = "schema" |> select([r], is_nil(r.x and r.y)) |> plan()
+    assert all(query) == ~s{SELECT (s0.`x` AND s0.`y`) IS NULL FROM `schema` AS s0}
+
+    query = "schema" |> select([r], is_nil(not r.x)) |> plan()
+    assert all(query) == ~s{SELECT (NOT (s0.`x`)) IS NULL FROM `schema` AS s0}
+  end
+
+  test "in preserves the left expression" do
+    query = "schema" |> select([r], (not r.x) in [true, false]) |> plan()
+    assert all(query) == ~s{SELECT (NOT (s0.`x`)) IN (TRUE,FALSE) FROM `schema` AS s0}
+
+    query = "schema" |> select([r], (r.x == r.y) in [true, false]) |> plan()
+    assert all(query) == ~s{SELECT (s0.`x` = s0.`y`) IN (TRUE,FALSE) FROM `schema` AS s0}
+  end
+
+  test "millisecond interval preserves the count expression" do
+    datetime_query =
+      "schema" |> select([s], datetime_add(s.foo, s.x + s.y, "millisecond")) |> plan()
+
+    date_query = "schema" |> select([s], date_add(s.foo, s.x + s.y, "millisecond")) |> plan()
+
+    for query <- [datetime_query, date_query] do
+      assert all(query) =~ ~s{INTERVAL ((s0.`x` + s0.`y`) * 1000) microsecond}
+    end
   end
 
   test "order_by and types" do
@@ -984,6 +1009,9 @@ defmodule Ecto.Adapters.MyXQLTest do
 
     assert update_all(query) ==
              ~s{UPDATE `schema` AS s0 SET s0.`x` = 0, s0.`y` = s0.`y` + 1, s0.`z` = s0.`z` + -3}
+
+    query = from(m in Schema, update: [inc: [x: m.y + m.z]]) |> plan(:update_all)
+    assert update_all(query) == ~s{UPDATE `schema` AS s0 SET s0.`x` = s0.`x` + (s0.`y` + s0.`z`)}
 
     query = from(e in Schema, where: e.x == 123, update: [set: [x: 0]]) |> plan(:update_all)
 

@@ -949,7 +949,7 @@ defmodule Ecto.Adapters.PostgresTest do
       |> plan()
 
     assert all(query) ==
-             ~s{SELECT TRUE FROM "schema" AS s0 WHERE (s0."foo"::timestamp + interval '1 month' > s0."bar")}
+             ~s{SELECT TRUE FROM "schema" AS s0 WHERE ((s0."foo"::timestamp + interval '1 month') > s0."bar")}
 
     query =
       "schema"
@@ -958,7 +958,32 @@ defmodule Ecto.Adapters.PostgresTest do
       |> plan()
 
     assert all(query) ==
-             ~s{SELECT TRUE FROM "schema" AS s0 WHERE (s0."foo"::varchar + interval '1 month' > s0."bar")}
+             ~s{SELECT TRUE FROM "schema" AS s0 WHERE ((s0."foo"::varchar + interval '1 month') > s0."bar")}
+  end
+
+  test "date and datetime arithmetic preserve the count expression" do
+    for unit <- ["day", "month"] do
+      datetime_sum = "schema" |> select([s], datetime_add(s.foo, s.x + s.y, ^unit)) |> plan()
+      date_sum = "schema" |> select([s], date_add(s.foo, s.x + s.y, ^unit)) |> plan()
+      datetime_div = "schema" |> select([s], datetime_add(s.foo, s.x / s.y, ^unit)) |> plan()
+      date_div = "schema" |> select([s], date_add(s.foo, s.x / s.y, ^unit)) |> plan()
+
+      for query <- [datetime_sum, date_sum] do
+        assert all(query) =~ ~s{(s0."x" + s0."y")::numeric * interval '1 #{unit}'}
+      end
+
+      for query <- [datetime_div, date_div] do
+        assert all(query) =~ ~s{(s0."x" / s0."y")::numeric * interval '1 #{unit}'}
+      end
+    end
+
+    query =
+      "schema"
+      |> select([s], fragment("?::date", datetime_add(s.foo, s.x, "day")))
+      |> plan()
+
+    assert all(query) ==
+             ~s{SELECT (s0."foo"::timestamp + (s0."x"::numeric * interval '1 day'))::date FROM "schema" AS s0}
   end
 
   test "tagged type" do
@@ -1317,6 +1342,9 @@ defmodule Ecto.Adapters.PostgresTest do
 
     assert update_all(query) ==
              ~s{UPDATE "schema" AS s0 SET "x" = 0, "y" = s0."y" + 1, "z" = s0."z" + -3}
+
+    query = from(m in Schema, update: [inc: [x: m.y + m.z]]) |> plan(:update_all)
+    assert update_all(query) == ~s{UPDATE "schema" AS s0 SET "x" = s0."x" + (s0."y" + s0."z")}
 
     query = from(e in Schema, where: e.x == 123, update: [set: [x: 0]]) |> plan(:update_all)
 

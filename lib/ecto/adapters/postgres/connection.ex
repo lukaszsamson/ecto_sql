@@ -665,7 +665,7 @@ if Code.ensure_loaded?(Postgrex) do
         " = ",
         quote_qualified_name(key, sources, 0),
         " + "
-        | expr(value, sources, query)
+        | maybe_paren(value, sources, query)
       ]
     end
 
@@ -1013,10 +1013,12 @@ if Code.ensure_loaded?(Postgrex) do
 
     defp expr({:datetime_add, _, [datetime, count, interval]}, sources, query) do
       [
+        ?(,
         expr(datetime, sources, query),
         type_unless_typed(datetime, "timestamp"),
         " + ",
-        interval(count, interval, sources, query)
+        interval(count, interval, sources, query),
+        ?)
       ]
     end
 
@@ -1195,7 +1197,13 @@ if Code.ensure_loaded?(Postgrex) do
     end
 
     defp interval(count, interval, sources, query) do
-      [?(, expr(count, sources, query), "::numeric * ", interval(1, interval, sources, query), ?)]
+      [
+        ?(,
+        maybe_paren(count, sources, query),
+        "::numeric * ",
+        interval(1, interval, sources, query),
+        ?)
+      ]
     end
 
     defp maybe_paren({op, _, [_, _]} = expr, sources, query) when op in @binary_ops,
