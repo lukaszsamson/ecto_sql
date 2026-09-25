@@ -1454,7 +1454,9 @@ defmodule Ecto.Migration do
     * `:comment` - adds a comment to the modified column.
     * `:collation` - the collation of the text type. On PostgreSQL, use
       `{schema, name}` for a schema-qualified collation; a string is treated as a
-      single collation name.
+      single collation name. PostgreSQL resets the collation to the type's default
+      when modifying a column without this option, even if the type is unchanged.
+      Specify the current collation to preserve it.
   """
   def modify(column, type, opts \\ []) when is_atom(column) and is_list(opts) do
     validate_column_opts!(opts, @modify_column_opts, "modify/3")
