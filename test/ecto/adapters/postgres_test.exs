@@ -2799,6 +2799,33 @@ defmodule Ecto.Adapters.PostgresTest do
            ]
   end
 
+  test "alter column collation stays with the type when modifying null or default" do
+    assert execute_ddl(
+             {:alter, table(:posts), [{:modify, :name, :text, collation: "C", null: false}]}
+           ) ==
+             [
+               ~s|ALTER TABLE "posts" ALTER COLUMN "name" TYPE text COLLATE "C", ALTER COLUMN "name" SET NOT NULL|
+             ]
+
+    assert execute_ddl(
+             {:alter, table(:posts), [{:modify, :name, :text, collation: "C", default: "x"}]}
+           ) ==
+             [
+               ~s|ALTER TABLE "posts" ALTER COLUMN "name" TYPE text COLLATE "C", ALTER COLUMN "name" SET DEFAULT 'x'|
+             ]
+
+    assert execute_ddl(
+             {:alter, table(:posts),
+              [
+                {:modify, :name, %Reference{table: :names, type: :text},
+                 collation: "C", null: false, default: "x"}
+              ]}
+           ) ==
+             [
+               ~s|ALTER TABLE "posts" ALTER COLUMN "name" TYPE text COLLATE "C", ADD CONSTRAINT "posts_name_fkey" FOREIGN KEY ("name") REFERENCES "names"("id"), ALTER COLUMN "name" SET NOT NULL, ALTER COLUMN "name" SET DEFAULT 'x'|
+             ]
+  end
+
   test "alter table with comments on table and columns" do
     alter =
       {:alter, table(:posts, comment: "table comment"),

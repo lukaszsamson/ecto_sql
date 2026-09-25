@@ -1594,11 +1594,11 @@ if Code.ensure_loaded?(Postgrex) do
         quote_name(name),
         " TYPE ",
         reference_column_type(ref.type, opts),
+        collation_expr(collation),
         ", ADD ",
         reference_expr(ref, table, name),
         modify_null(name, opts),
-        modify_default(name, ref.type, opts),
-        collation_expr(collation)
+        modify_default(name, ref.type, opts)
       ]
     end
 
@@ -1611,9 +1611,9 @@ if Code.ensure_loaded?(Postgrex) do
         quote_name(name),
         " TYPE ",
         modify_column_type(type, opts),
+        collation_expr(collation),
         modify_null(name, opts),
         modify_default(name, type, opts),
-        collation_expr(collation),
         modify_identity(name, type, opts)
       ]
     end
