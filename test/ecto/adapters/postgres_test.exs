@@ -2858,17 +2858,9 @@ defmodule Ecto.Adapters.PostgresTest do
              ]
   end
 
-  test "collation names are quoted as identifiers" do
+  test "collation strings are quoted as single identifiers" do
     assert execute_ddl({:alter, table(:posts), [{:modify, :name, :text, collation: "odd\"name"}]}) ==
              [~s|ALTER TABLE "posts" ALTER COLUMN "name" TYPE text COLLATE "odd""name"|]
-
-    assert execute_ddl(
-             {:alter, table(:posts),
-              [{:modify, :name, :text, collation: {"my.schema", "odd\"name"}}]}
-           ) ==
-             [
-               ~s|ALTER TABLE "posts" ALTER COLUMN "name" TYPE text COLLATE "my.schema"."odd""name"|
-             ]
 
     assert execute_ddl(
              {:alter, table(:posts), [{:add, :name, :text, collation: "name.with.dot"}]}

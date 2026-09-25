@@ -1689,10 +1689,6 @@ if Code.ensure_loaded?(Postgrex) do
     defp null_expr(true), do: " NULL"
     defp null_expr(_), do: []
 
-    defp collation_expr({:ok, {schema, name}}) do
-      [" COLLATE ", quote_collation_name(schema), ?., quote_collation_name(name)]
-    end
-
     defp collation_expr({:ok, name}), do: [" COLLATE ", quote_collation_name(name)]
     defp collation_expr(_), do: []
 
