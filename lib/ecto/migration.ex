@@ -1253,7 +1253,9 @@ defmodule Ecto.Migration do
       specified.
     * `:scale` - the scale of a numeric type. Defaults to `0`.
     * `:comment` - adds a comment to the added column.
-    * `:collation` - the collation of the text type.
+    * `:collation` - the collation of the text type. On PostgreSQL, use
+      `{schema, name}` for a schema-qualified collation; a string is treated as a
+      single collation name.
     * `:after` - positions field after the specified one. Only supported on MySQL,
       it is ignored by other databases.
     * `:generated` - a string representing the expression for a generated column. See
@@ -1450,7 +1452,9 @@ defmodule Ecto.Migration do
       specified.
     * `:scale` - the scale of a numeric type. Defaults to `0`.
     * `:comment` - adds a comment to the modified column.
-    * `:collation` - the collation of the text type.
+    * `:collation` - the collation of the text type. On PostgreSQL, use
+      `{schema, name}` for a schema-qualified collation; a string is treated as a
+      single collation name.
   """
   def modify(column, type, opts \\ []) when is_atom(column) and is_list(opts) do
     validate_column_opts!(opts, @modify_column_opts, "modify/3")
