@@ -2826,6 +2826,38 @@ defmodule Ecto.Adapters.PostgresTest do
              ]
   end
 
+  test "column collation precedes defaults and constraints when adding columns" do
+    opts = [collation: "C", default: "x", null: false]
+
+    assert execute_ddl({:create, table(:posts), [{:add, :name, :text, opts}]}) == [
+             ~s|CREATE TABLE "posts" ("name" text COLLATE "C" DEFAULT 'x' NOT NULL)|
+           ]
+
+    assert execute_ddl({:alter, table(:posts), [{:add, :name, :text, opts}]}) == [
+             ~s|ALTER TABLE "posts" ADD COLUMN "name" text COLLATE "C" DEFAULT 'x' NOT NULL|
+           ]
+
+    assert execute_ddl({:alter, table(:posts), [{:add_if_not_exists, :name, :text, opts}]}) == [
+             ~s|ALTER TABLE "posts" ADD COLUMN IF NOT EXISTS "name" text COLLATE "C" DEFAULT 'x' NOT NULL|
+           ]
+
+    assert execute_ddl(
+             {:alter, table(:posts),
+              [{:add, :name, %Reference{table: :names, type: :text}, opts}]}
+           ) ==
+             [
+               ~s|ALTER TABLE "posts" ADD COLUMN "name" text COLLATE "C" DEFAULT 'x' NOT NULL, ADD CONSTRAINT "posts_name_fkey" FOREIGN KEY ("name") REFERENCES "names"("id")|
+             ]
+
+    assert execute_ddl(
+             {:alter, table(:posts),
+              [{:add, :computed, :text, collation: "C", generated: "ALWAYS AS (name) STORED"}]}
+           ) ==
+             [
+               ~s|ALTER TABLE "posts" ADD COLUMN "computed" text COLLATE "C" GENERATED ALWAYS AS (name) STORED|
+             ]
+  end
+
   test "alter table with comments on table and columns" do
     alter =
       {:alter, table(:posts, comment: "table comment"),
